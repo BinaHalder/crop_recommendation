@@ -3,32 +3,37 @@ import joblib
 import numpy as np
 from flask_cors import CORS
 
-# Initialize app
 app = Flask(__name__)
 CORS(app)
 
-# Load model and label encoder
 model = joblib.load("crop_model.pkl")
 
-
-# Home route
 @app.route("/")
 def home():
     return "Crop Recommendation API is running"
 
-# Prediction route
-@app.route('/predict', methods=['POST'])
+@app.route("/predict", methods=["POST"])
 def predict():
-    data = request.json
-    features = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
-    x = np.array([data[f] for f in features]).reshape(1, -1)
+    try:
+        data = request.get_json(force=True)
 
-    pred = model.predict(x)[0]
- 
+        x = np.array([
+            data["N"],
+            data["P"],
+            data["K"],
+            data["temperature"],
+            data["humidity"],
+            data["ph"],
+            data["rainfall"]
+        ]).reshape(1, -1)
 
-    return jsonify({"crop": label})
+        crop = model.predict(x)[0]   # ✅ NO label encoder
+
+        return jsonify({"crop": crop})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=10000)
-
+    app.run(host="0.0.0.0", port=10000)
 
